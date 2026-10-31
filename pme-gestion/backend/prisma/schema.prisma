@@ -1,0 +1,214 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  password      String
+  role          String
+  is_accredited Boolean  @default(false)
+  created_at    DateTime @default(now())
+}
+
+model Company {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String?
+  phone      String?
+  address    String?
+  created_at DateTime @default(now())
+}
+
+model Client {
+  id         Int      @id @default(autoincrement())
+  company_id Int
+  name       String
+  email      String?
+  phone      String?
+  address    String?
+  user_id    Int?
+}
+
+model Supplier {
+  id         Int      @id @default(autoincrement())
+  company_id Int
+  name       String
+  email      String?
+  phone      String?
+  address    String?
+}
+
+model Category {
+  id         Int      @id @default(autoincrement())
+  company_id Int
+  name       String
+  type       String
+}
+
+model Product {
+  id             Int      @id @default(autoincrement())
+  company_id     Int
+  reference      String?
+  name           String
+  category       String?
+  purchase_price Float?
+  sale_price     Float?
+  quantity       Int      @default(0)
+  min_threshold  Int      @default(0)
+}
+
+model StockMovement {
+  id         Int      @id @default(autoincrement())
+  product_id Int
+  type       String
+  quantity   Int
+  reason     String?
+  date       DateTime @default(now())
+}
+
+model Transaction {
+  id             Int      @id @default(autoincrement())
+  company_id     Int
+  category_id    Int?
+  client_id      Int?
+  supplier_id    Int?
+  type           String
+  amount         Float
+  payment_method String?
+  description    String?
+  date           DateTime @default(now())
+}
+
+model Invoice {
+  id             Int      @id @default(autoincrement())
+  company_id     Int
+  client_id      Int
+  invoice_number String
+  issue_date     DateTime @default(now())
+  due_date       DateTime?
+  total_amount   Float
+  status         String
+}
+
+model InvoiceItem {
+  id          Int    @id @default(autoincrement())
+  invoice_id  Int
+  description String
+  quantity    Int
+  unit_price  Float
+  total       Float
+}
+
+model Payment {
+  id             Int      @id @default(autoincrement())
+  invoice_id     Int
+  amount         Float
+  payment_method String?
+  payment_date   DateTime @default(now())
+}
+
+model Service {
+  id            Int      @id @default(autoincrement())
+  company_id    Int
+  name          String
+  description   String?
+  price         Float
+  duration      Int
+  payment_terms String?
+  is_active     Boolean  @default(true)
+}
+
+model Station {
+  id         Int    @id @default(autoincrement())
+  company_id Int
+  name       String
+  status     String
+}
+
+model StaffMember {
+  id         Int    @id @default(autoincrement())
+  user_id    Int
+  specialty  String?
+  station_id Int?
+}
+
+model Booking {
+  id         Int      @id @default(autoincrement())
+  company_id Int
+  client_id  Int
+  service_id Int
+  staff_id   Int?
+  start_at   DateTime
+  status     String
+  source     String?
+}
+
+model QueueEntry {
+  id         Int      @id @default(autoincrement())
+  company_id Int
+  client_id  Int
+  booking_id Int?
+  arrived_at DateTime @default(now())
+  position   Int
+  station_id Int?
+  staff_id   Int?
+  status     String
+  started_at DateTime?
+  ended_at   DateTime?
+}
+
+model Rating {
+  id             Int      @id @default(autoincrement())
+  queue_entry_id Int
+  target_type    String
+  target_id      Int
+  score          Int
+  comment        String?
+  created_at     DateTime @default(now())
+}
+
+model AccountingEntry {
+  id             Int      @id @default(autoincrement())
+  company_id     Int
+  date           DateTime
+  label          String
+  debit_account  String
+  credit_account String
+  amount         Float
+  source         String
+  validated_by   Int?
+}
+
+model Account {
+  id         Int    @id @default(autoincrement())
+  company_id Int
+  number     String
+  name       String
+  class      String
+}
+
+model AiLog {
+  id            Int      @id @default(autoincrement())
+  user_id       Int
+  channel       String
+  request       String?
+  proposal      String?
+  action_status String
+  validated_by  Int?
+  created_at    DateTime @default(now())
+}
+
+model ReportSetting {
+  id          Int    @id @default(autoincrement())
+  user_id     Int
+  report_type String
+  frequency   String
+  channel     String
+}
