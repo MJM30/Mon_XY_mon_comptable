@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "installCommand": "cd mon-comptable/frontend && npm install",
+  "buildCommand": "cd mon-comptable/frontend && npm run build",
+  "outputDirectory": "mon-comptable/frontend/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
