@@ -15,6 +15,7 @@ import {
   Building,
   DollarSign,
   ChevronRight,
+  MinusCircle,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -95,6 +96,14 @@ export const SellerDashboard: React.FC = () => {
           >
             <ShoppingCart className="w-4 h-4" />
             <span>Créer Devis / Vente</span>
+          </Link>
+
+          <Link
+            to="/vendeur/depenses"
+            className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-colors"
+          >
+            <MinusCircle className="w-4 h-4" />
+            <span>Engager une Dépense</span>
           </Link>
         </div>
       </div>
@@ -273,6 +282,17 @@ export const SellerDashboard: React.FC = () => {
                   <span>Déclarer un Règlement Client</span>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400" />
+              </Link>
+
+              <Link
+                to="/vendeur/depenses"
+                className="p-3 rounded-xl border border-rose-200 bg-rose-50/40 hover:bg-rose-50 flex items-center justify-between text-xs font-bold text-rose-800 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <MinusCircle className="w-4 h-4 text-rose-600" />
+                  <span>Engager une Dépense / Bon de Sortie</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-rose-400" />
               </Link>
             </div>
           </div>

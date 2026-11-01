@@ -630,12 +630,21 @@ export const JournalEntries: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setSelectedPosReceiptModal(receipt)}
-                          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold flex items-center gap-1.5 transition"
+                          className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition ${
+                            receipt.voucherType === 'EXPENSE'
+                              ? 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200'
+                              : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
+                          }`}
                         >
-                          <Receipt className="w-3.5 h-3.5 text-blue-600" />
+                          <Receipt
+                            className={`w-3.5 h-3.5 ${
+                              receipt.voucherType === 'EXPENSE' ? 'text-rose-600' : 'text-blue-600'
+                            }`}
+                          />
                           <span>
-                            Voir Reçu Justificatif ({receipt.receiptId} • $
-                            {receipt.totalUsd.toFixed(2)})
+                            {receipt.voucherType === 'EXPENSE'
+                              ? `Voir Bon de Sortie (${receipt.receiptId} • -$${receipt.totalUsd.toFixed(2)})`
+                              : `Voir Reçu Justificatif (${receipt.receiptId} • $${receipt.totalUsd.toFixed(2)})`}
                           </span>
                         </button>
                       )}
@@ -1100,12 +1109,20 @@ export const JournalEntries: React.FC = () => {
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <span className="p-2 rounded-xl bg-blue-50 text-blue-600">
+                <span
+                  className={`p-2 rounded-xl ${
+                    selectedPosReceiptModal.voucherType === 'EXPENSE'
+                      ? 'bg-rose-50 text-rose-600'
+                      : 'bg-blue-50 text-blue-600'
+                  }`}
+                >
                   <Receipt className="w-4 h-4" />
                 </span>
                 <div>
                   <h3 className="font-extrabold text-sm text-slate-900">
-                    Pièce Justificative de Caisse POS
+                    {selectedPosReceiptModal.voucherType === 'EXPENSE'
+                      ? 'Bon de Sortie de Caisse — Dépense Vendeur'
+                      : 'Pièce Justificative de Caisse POS'}
                   </h3>
                   <p className="text-[11px] text-slate-500">
                     Transmise par {selectedPosReceiptModal.operatorName} ({selectedPosReceiptModal.operatorRole})
@@ -1141,7 +1158,11 @@ export const JournalEntries: React.FC = () => {
                 <span className="font-semibold">{selectedPosReceiptModal.timestamp}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Client :</span>
+                <span className="text-slate-500">
+                  {selectedPosReceiptModal.voucherType === 'EXPENSE'
+                    ? 'Bénéficiaire / Fournisseur :'
+                    : 'Client :'}
+                </span>
                 <span className="font-bold text-slate-800">{selectedPosReceiptModal.clientName}</span>
               </div>
               <div className="flex justify-between">

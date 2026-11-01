@@ -389,6 +389,10 @@ export interface AccountingEntryLine {
 
 export interface PosAttachedReceipt {
   receiptId: string;
+  voucherType?: 'SALE' | 'EXPENSE';
+  expenseCategoryLabel?: string;
+  expenseAccountNumber?: string;
+  expenseAccountLabel?: string;
   timestamp: string;
   dateIso: string;
   companyName: string;
@@ -397,7 +401,7 @@ export interface PosAttachedReceipt {
   establishmentName: string;
   operatorName: string;
   operatorRole: string;
-  clientName: string;
+  clientName: string; // Client (pour vente) ou Bénéficiaire / Fournisseur (pour dépense)
   tableOrStation: string;
   paymentMethodCode: string;
   paymentMethodLabel: string;

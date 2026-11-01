@@ -974,10 +974,52 @@ export const recalculateDraftPosEntriesWithBccRate = (newBccRate: number) => {
     if (entry.status === 'DRAFT' && entry.attachedPosReceipt) {
       const usd = entry.attachedPosReceipt.totalUsd;
       const newTotalCdf = Math.round(usd * newBccRate);
+      const isExpense = entry.attachedPosReceipt.voucherType === 'EXPENSE';
+
+      modified = true;
+
+      if (isExpense) {
+        return {
+          ...entry,
+          label: `[DÉPENSE VENDEUR & CAISSE] Bon de sortie ${entry.attachedPosReceipt.receiptId} — ${
+            entry.attachedPosReceipt.clientName
+          } (${usd.toFixed(2)} $ → ${newTotalCdf.toLocaleString('fr-FR')} FC au taux BCC ${newBccRate.toLocaleString(
+            'fr-FR'
+          )} FC/$)`,
+          totalDebit: newTotalCdf,
+          totalCredit: newTotalCdf,
+          attachedPosReceipt: {
+            ...entry.attachedPosReceipt,
+            bccExchangeRate: newBccRate,
+            totalCdf: newTotalCdf,
+          },
+          lines: entry.lines.map((line, idx) => {
+            if (idx === 0) {
+              return {
+                ...line,
+                debit: newTotalCdf,
+                label: `Charge engagée (${entry.attachedPosReceipt?.expenseCategoryLabel || 'Frais opérationnels'}) — ${
+                  entry.attachedPosReceipt?.receiptId
+                } (${usd.toFixed(2)} $ × ${newBccRate.toLocaleString('fr-FR')} FC)`,
+              };
+            }
+            if (idx === 1) {
+              return {
+                ...line,
+                credit: newTotalCdf,
+                label: `Décaissement ${entry.attachedPosReceipt?.paymentMethodLabel} (${
+                  entry.attachedPosReceipt?.receiptId
+                })`,
+              };
+            }
+            return line;
+          }),
+        };
+      }
+
       const newHtCdf = Math.round(newTotalCdf / 1.16);
       const newVatCdf = newTotalCdf - newHtCdf;
 
-      modified = true;
       return {
         ...entry,
         label: `[POS & CAISSE] Encaissement Ticket ${entry.attachedPosReceipt.receiptId} — ${
@@ -1149,6 +1191,181 @@ export const createAccountingEntryFromPosReceipt = (
   const updated = [newDraftEntry, ...entries];
   saveStoredEntries(updated);
   return newDraftEntry;
+};
+
+/**
+ * Génère et transmet automatiquement une écriture comptable en Franc Congolais (FC / CDF)
+ * lorsqu'un Vendeur (SELLER) ou Caissier (CASHIER) engage une dépense opérationnelle depuis son espace.
+ * Le Bon de Sortie / Justificatif de Dépense est joint comme pièce justificative (`attachedPosReceipt`)
+ * et en attente de validation par le Comptable (ou validation automatique à 00h00).
+ */
+export interface SellerExpenseInput {
+  voucherId: string;
+  timestamp: string;
+  dateIso: string;
+  companyName: string;
+  receiptHeader: string;
+  receiptFooter: string;
+  establishmentName: string;
+  operatorName: string;
+  operatorRole: string;
+  beneficiaryOrSupplier: string;
+  stationOrPurpose: string;
+  expenseCategoryCode: string;
+  expenseCategoryLabel: string;
+  expenseAccountId: number;
+  expenseAccountNumber: string;
+  expenseAccountLabel: string;
+  description: string;
+  paymentMethodCode: string;
+  paymentMethodLabel: string;
+  paymentReference: string;
+  amountUsd: number;
+  bccExchangeRate?: number;
+}
+
+export const createAccountingEntryFromSellerExpense = (
+  expense: SellerExpenseInput
+): AccountingEntry => {
+  const entries = getStoredEntries();
+  const bccRate = expense.bccExchangeRate || getStoredBccExchangeRate();
+  const totalCdf = Math.round(expense.amountUsd * bccRate);
+
+  const treasuryAccountMap: Record<
+    string,
+    { accountId: number; accountNumber: string; accountLabel: string; journalCode: string; journalName: string }
+  > = {
+    CASH_USD: {
+      accountId: 17,
+      accountNumber: '571100',
+      accountLabel: 'Caisse centrale physique (Espèces CDF & contre-valeur)',
+      journalCode: 'CA',
+      journalName: 'Journal de Caisse centrale',
+    },
+    MPESA: {
+      accountId: 18,
+      accountNumber: '518100',
+      accountLabel: 'Compte Marchand M-Pesa (Vodacom)',
+      journalCode: 'BQ',
+      journalName: 'Journal de Banque & Mobile Money',
+    },
+    ORANGE_MONEY: {
+      accountId: 19,
+      accountNumber: '518200',
+      accountLabel: 'Compte Marchand Orange Money',
+      journalCode: 'BQ',
+      journalName: 'Journal de Banque & Mobile Money',
+    },
+    AIRTEL_MONEY: {
+      accountId: 20,
+      accountNumber: '518300',
+      accountLabel: 'Compte Marchand Airtel Money',
+      journalCode: 'BQ',
+      journalName: 'Journal de Banque & Mobile Money',
+    },
+    ILLICOCASH: {
+      accountId: 21,
+      accountNumber: '518400',
+      accountLabel: 'Compte Passerelle IllicoCash (Rawbank)',
+      journalCode: 'BQ',
+      journalName: 'Journal de Banque & Mobile Money',
+    },
+    VISA_MASTERCARD: {
+      accountId: 22,
+      accountNumber: '518500',
+      accountLabel: 'Compte de transit Cartes Visa / Mastercard',
+      journalCode: 'BQ',
+      journalName: 'Journal de Banque & Mobile Money',
+    },
+  };
+
+  const treasuryAcc = treasuryAccountMap[expense.paymentMethodCode] || treasuryAccountMap.CASH_USD;
+  const entryNumSuffix = expense.voucherId.replace('DEP-POS-', '');
+
+  const attachedVoucher: PosAttachedReceipt = {
+    receiptId: expense.voucherId,
+    voucherType: 'EXPENSE',
+    expenseCategoryLabel: expense.expenseCategoryLabel,
+    expenseAccountNumber: expense.expenseAccountNumber,
+    expenseAccountLabel: expense.expenseAccountLabel,
+    timestamp: expense.timestamp,
+    dateIso: expense.dateIso,
+    companyName: expense.companyName,
+    receiptHeader: expense.receiptHeader,
+    receiptFooter: expense.receiptFooter,
+    establishmentName: expense.establishmentName,
+    operatorName: expense.operatorName,
+    operatorRole: expense.operatorRole,
+    clientName: expense.beneficiaryOrSupplier,
+    tableOrStation: expense.stationOrPurpose,
+    paymentMethodCode: expense.paymentMethodCode,
+    paymentMethodLabel: expense.paymentMethodLabel,
+    paymentReference: expense.paymentReference,
+    subtotalUsd: expense.amountUsd,
+    discountAmountUsd: 0,
+    totalUsd: expense.amountUsd,
+    bccExchangeRate: bccRate,
+    totalCdf,
+    items: [
+      {
+        sku: expense.expenseAccountNumber,
+        name: `${expense.expenseCategoryLabel} — ${expense.description}`,
+        quantity: 1,
+        unitPriceUsd: expense.amountUsd,
+        totalUsd: expense.amountUsd,
+      },
+    ],
+  };
+
+  const newDraftExpenseEntry: AccountingEntry = {
+    id: Date.now(),
+    entryNumber: `ECR-DEP-${entryNumSuffix}`,
+    date: expense.dateIso || new Date().toISOString(),
+    journalCode: treasuryAcc.journalCode,
+    journalName: treasuryAcc.journalName,
+    fiscalYear: '2026',
+    periodName: 'Octobre 2026',
+    label: `[DÉPENSE VENDEUR & CAISSE] ${expense.expenseCategoryLabel} — ${expense.beneficiaryOrSupplier} : ${expense.description} (${expense.amountUsd.toFixed(
+      2
+    )} $ → ${totalCdf.toLocaleString('fr-FR')} FC)`,
+    pieceRef: expense.voucherId,
+    status: 'DRAFT',
+    sourceDocType: 'EXPENSE',
+    totalDebit: totalCdf,
+    totalCredit: totalCdf,
+    isBalanced: true,
+    createdByName: `${expense.operatorName} (${expense.operatorRole})`,
+    autoPostAtMidnight: true,
+    attachedPosReceipt: attachedVoucher,
+    lines: [
+      {
+        id: Date.now() + 1,
+        lineNumber: 1,
+        accountId: expense.expenseAccountId,
+        accountNumber: expense.expenseAccountNumber,
+        accountLabel: expense.expenseAccountLabel,
+        debit: totalCdf,
+        credit: 0,
+        label: `Engagement dépense Vendeur : ${expense.description} (${expense.amountUsd.toFixed(2)} $)`,
+        pieceRef: expense.voucherId,
+      },
+      {
+        id: Date.now() + 2,
+        lineNumber: 2,
+        accountId: treasuryAcc.accountId,
+        accountNumber: treasuryAcc.accountNumber,
+        accountLabel: treasuryAcc.accountLabel,
+        debit: 0,
+        credit: totalCdf,
+        label: `Décaissement ${expense.paymentMethodLabel} — Bénéficiaire : ${expense.beneficiaryOrSupplier}`,
+        pieceRef: expense.voucherId,
+      },
+    ],
+  };
+
+  const updated = [newDraftExpenseEntry, ...entries];
+  saveStoredEntries(updated);
+  return newDraftExpenseEntry;
 };
 
 /**

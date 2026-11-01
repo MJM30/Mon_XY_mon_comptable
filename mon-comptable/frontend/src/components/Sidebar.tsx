@@ -233,6 +233,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
                     <span>Devis, Commandes & Reçus</span>
                   </NavLink>
                   <NavLink
+                    to="/vendeur/depenses"
+                    className={navLinkClass}
+                    style={({ isActive }) => getActiveStyle(isActive)}
+                  >
+                    <MinusCircle className="w-4 h-4" />
+                    <span>Dépenses & Sorties Caisse</span>
+                  </NavLink>
+                  <NavLink
                     to="/vendeur/prospects"
                     className={navLinkClass}
                     style={({ isActive }) => getActiveStyle(isActive)}

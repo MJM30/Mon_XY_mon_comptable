@@ -22,6 +22,7 @@ import { SellerDashboard } from './pages/seller/SellerDashboard';
 import { PosCatalog } from './pages/seller/PosCatalog';
 import { ProspectsCrm } from './pages/seller/ProspectsCrm';
 import { QuotesAndOrders } from './pages/seller/QuotesAndOrders';
+import { SellerExpenses } from './pages/seller/SellerExpenses';
 import { FinanceVerification } from './pages/finance/FinanceVerification';
 import { AdminPosManagement } from './pages/admin/AdminPosManagement';
 import { NotFound } from './pages/NotFound';
@@ -94,6 +95,7 @@ export const App: React.FC = () => {
             <Route path="vendeur/catalogue" element={<PosCatalog />} />
             <Route path="vendeur/prospects" element={<ProspectsCrm />} />
             <Route path="vendeur/commandes" element={<QuotesAndOrders />} />
+            <Route path="vendeur/depenses" element={<SellerExpenses />} />
 
             {/* Espace Contrôle Financier & Trésorerie */}
             <Route path="finance/controle" element={<FinancialControllerWorkspace />} />

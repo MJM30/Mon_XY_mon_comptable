@@ -24,7 +24,9 @@ import {
   History,
   ChefHat,
   Calendar,
+  MinusCircle,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   SECTOR_CATALOG_ITEMS,
@@ -78,6 +80,7 @@ export const SectorPosTerminal: React.FC = () => {
     activeBranding,
     logAuditEvent,
   } = useAuth();
+  const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<'TERMINAL' | 'ACTIVE_OPERATIONS' | 'DAILY_HISTORY'>('TERMINAL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -478,6 +481,14 @@ export const SectorPosTerminal: React.FC = () => {
           >
             <History className="w-3.5 h-3.5" />
             <span>Journal de Caisse ({dailyReceipts.length})</span>
+          </button>
+          <button
+            onClick={() => navigate('/vendeur/depenses')}
+            className="px-3.5 py-2 rounded-lg text-xs font-extrabold transition flex items-center gap-1.5 bg-rose-600 hover:bg-rose-500 text-white shadow-sm border border-rose-400/40"
+            title="Engager une dépense opérationnelle ou émettre un Bon de Sortie de Caisse"
+          >
+            <MinusCircle className="w-3.5 h-3.5" />
+            <span>Engager une Dépense</span>
           </button>
         </div>
       </div>
